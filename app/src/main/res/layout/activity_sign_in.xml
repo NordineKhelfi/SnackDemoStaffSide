@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/snack_staff_back"
+    tools:context="com.khelfi.snackdemostaffside.SignInActivity">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_centerInParent="true">
+
+        <com.rengwuxian.materialedittext.MaterialEditText
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:id="@+id/etPhone"
+            android:hint="Phone number"
+            android:text="0753632197"
+            android:textSize="20dp"
+            app:met_textColorHint="@android:color/white"
+            app:met_baseColor="@android:color/white"
+            app:met_primaryColor="@android:color/white"
+            app:met_floatingLabel="normal"
+            app:met_singleLineEllipsis="true"
+            android:inputType="phone"
+            android:layout_marginHorizontal="40dp"/>
+
+        <com.rengwuxian.materialedittext.MaterialEditText
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:id="@+id/etPass"
+            android:hint="Password"
+            android:text="456789"
+            android:textSize="20dp"
+            app:met_textColorHint="@android:color/white"
+            app:met_baseColor="@android:color/white"
+            app:met_primaryColor="@android:color/white"
+            app:met_floatingLabel="normal"
+            app:met_singleLineEllipsis="true"
+            android:inputType="textPassword"
+            android:layout_marginHorizontal="40dp"/>
+
+
+    </LinearLayout>
+
+    <Button
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/bSignIn"
+        android:layout_alignParentBottom="true"
+        android:text="Sign In"
+        android:textColor="@color/colorPrimaryDark"
+        android:layout_margin="30dp"
+        android:background="@drawable/btn_selector"/>
+
+</RelativeLayout>
