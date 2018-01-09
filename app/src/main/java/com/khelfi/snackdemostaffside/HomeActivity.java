@@ -1,8 +1,16 @@
 package com.khelfi.snackdemostaffside;
 
+import android.app.ProgressDialog;
+import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
+import android.support.design.widget.BaseTransientBottomBar;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
+import android.support.v7.app.AlertDialog;
+import android.support.v7.widget.RecyclerView;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.support.design.widget.NavigationView;
 import android.support.v4.view.GravityCompat;
@@ -12,16 +20,50 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.Button;
 import android.widget.TextView;
+import android.widget.Toast;
 
+import com.firebase.ui.database.FirebaseRecyclerAdapter;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.OnProgressListener;
+import com.google.firebase.storage.StorageReference;
+import com.google.firebase.storage.UploadTask;
 import com.khelfi.snackdemostaffside.Common.Common;
+import com.khelfi.snackdemostaffside.Interfaces.ItemClickListener;
+import com.khelfi.snackdemostaffside.Model.Category;
+import com.khelfi.snackdemostaffside.ViewHolder.MenuViewHolder;
+import com.rengwuxian.materialedittext.MaterialEditText;
+import com.squareup.picasso.Picasso;
+
+import java.util.UUID;
+
+import dmax.dialog.SpotsDialog;
 
 public class HomeActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
 
+    private static final int PICK_IMAGE_REQUEST_CODE = 71;
     TextView tvUser;
+    DatabaseReference category_table;
+    RecyclerView recyclerView;
 
-    @Override
+
+    //Add new category
+    MaterialEditText etNewCategory;
+    Button bSelect, bUpload;
+    AlertDialog alertDialog;
+    Category newCategory;
+    Uri savedUri;
+
+    //Firebase
+    FirebaseRecyclerAdapter<Category, MenuViewHolder> recyclerAdapter;
+    StorageReference storageReference;
+
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_home);
@@ -29,12 +71,14 @@ public class HomeActivity extends AppCompatActivity
         toolbar.setTitle("Management Menu");
         setSupportActionBar(toolbar);
 
+
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
+
+                showAddCategoryDialog();
+
             }
         });
 
@@ -51,6 +95,140 @@ public class HomeActivity extends AppCompatActivity
         View headerView = navigationView.getHeaderView(0);
         tvUser = (TextView) headerView.findViewById(R.id.tvUser);
         tvUser.setText(Common.currentUser.getName());
+
+        //Init firebase
+        category_table = FirebaseDatabase.getInstance().getReference("Category");
+        storageReference = FirebaseStorage.getInstance().getReference();
+
+        //Load menus from DB
+        recyclerView = (RecyclerView) findViewById(R.id.recyclerView);
+        recyclerView.setHasFixedSize(true);
+
+        recyclerAdapter = new FirebaseRecyclerAdapter<Category, MenuViewHolder>(Category.class, R.layout.menu_item, MenuViewHolder.class, category_table) {
+            @Override
+            protected void populateViewHolder(MenuViewHolder viewHolder, Category model, int position) {
+
+                viewHolder.tvMenuName.setText( model.getName() );
+                Picasso.with(getApplicationContext()).load(model.getLink()).into(viewHolder.ivMenu);
+
+                viewHolder.setItemClickListener(new ItemClickListener() {
+                    @Override
+                    public void onClick(View view, int position, boolean isLongClick) {
+                        //TODO
+                    }
+                });
+
+            }
+        };
+
+        recyclerAdapter.notifyDataSetChanged();     // Refresh data when it changes
+        recyclerView.setAdapter(recyclerAdapter);
+
+    }
+
+    private void showAddCategoryDialog() {
+
+        LayoutInflater inflater = this.getLayoutInflater();
+        View add_category_layout = inflater.inflate(R.layout.add_new_category, null);
+        AlertDialog.Builder adBuilder = new AlertDialog.Builder(this);
+
+        etNewCategory = (MaterialEditText) add_category_layout.findViewById(R.id.etNewMenu);
+        bSelect = (Button) add_category_layout.findViewById(R.id.bSelect);
+        bUpload = (Button) add_category_layout.findViewById(R.id.bUpload);
+
+        bSelect.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                //Let the user pick an image from the gallery, then save the image's Uri
+                selectAnImage();
+            }
+        });
+
+        bUpload.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                uploadImage();
+            }
+        });
+
+        adBuilder.setTitle("Add new category")
+                .setMessage("Enter a name, then select a picture to represent your new category.")
+                .setView(add_category_layout);
+
+        alertDialog = adBuilder.create();
+        alertDialog.show();
+
+    }
+
+    private void selectAnImage() {
+
+        Intent intent = new Intent();
+        intent.setAction(Intent.ACTION_GET_CONTENT);
+        intent.setType("image/*"); // <-- MIME. Take a look here : https://fr.wikipedia.org/wiki/Type_MIME
+        startActivityForResult(Intent.createChooser(intent, "Select an image"), PICK_IMAGE_REQUEST_CODE);
+        //startActivityForResult(intent, PICK_IMAGE_REQUEST_CODE);
+
+    }
+
+    private void uploadImage() {
+
+        //Input check
+        if(etNewCategory.getText().toString().matches("")){
+            Toast.makeText(this, "Please enter a category name", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        if(savedUri == null){
+            Toast.makeText(this, "Please select an image to upload", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+
+        final ProgressDialog mDialog = new ProgressDialog(this);
+        mDialog.setMessage("Uploading");
+        mDialog.show();
+
+        final String imageName = UUID.randomUUID().toString();
+        StorageReference imageReference = storageReference.child("images/" + imageName);
+
+        imageReference.putFile(savedUri).addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
+            @Override
+            public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
+                mDialog.dismiss();
+                Toast.makeText(HomeActivity.this, "Upload successfull !", Toast.LENGTH_SHORT).show();
+                alertDialog.dismiss();
+
+                //Now we instantiate the new Category
+                newCategory = new Category(etNewCategory.getText().toString(), taskSnapshot.getDownloadUrl().toString());
+
+                //Then finally add it to the dataBase
+                category_table.push().setValue(newCategory);
+                Snackbar.make(findViewById(R.id.drawer_layout), "New category added", Snackbar.LENGTH_SHORT).show();
+            }
+        })
+        .addOnFailureListener(new OnFailureListener() {
+            @Override
+            public void onFailure(@NonNull Exception e) {
+                mDialog.dismiss();
+                Toast.makeText(HomeActivity.this, e.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+        })
+        .addOnProgressListener(new OnProgressListener<UploadTask.TaskSnapshot>() {
+            @Override
+            public void onProgress(UploadTask.TaskSnapshot taskSnapshot) {
+
+            }
+        });
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        if(requestCode == PICK_IMAGE_REQUEST_CODE && resultCode == RESULT_OK
+                && data != null && data.getData() != null){
+            savedUri = data.getData();
+            bSelect.setText("Selected !");
+        }
     }
 
     @Override
