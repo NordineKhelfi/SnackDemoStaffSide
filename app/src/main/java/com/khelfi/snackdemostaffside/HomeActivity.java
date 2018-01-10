@@ -27,6 +27,7 @@ import android.widget.Toast;
 import com.firebase.ui.database.FirebaseRecyclerAdapter;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.storage.FirebaseStorage;
@@ -115,6 +116,7 @@ public class HomeActivity extends AppCompatActivity
                     @Override
                     public void onClick(View view, int position, boolean isLongClick) {
                         //TODO
+
                     }
                 });
 
@@ -218,6 +220,108 @@ public class HomeActivity extends AppCompatActivity
 
             }
         });
+
+        //Clear savedUri
+        savedUri = null;
+    }
+
+    // Update/Delete categories
+    @Override
+    public boolean onContextItemSelected(MenuItem item) {
+
+        if(item.getTitle().equals(Common.UPDATE)){
+            showUpdateDialog(recyclerAdapter.getRef(item.getOrder()).getKey(), recyclerAdapter.getItem(item.getOrder()));
+
+        } else if(item.getTitle().equals(Common.DELETE)){
+            category_table.child(recyclerAdapter.getRef(item.getOrder()).getKey()).removeValue();
+        }
+
+        return super.onContextItemSelected(item);
+    }
+
+    private void showUpdateDialog(final String key, final Category categoryItem) {
+
+        LayoutInflater inflater = this.getLayoutInflater();
+        View add_category_layout = inflater.inflate(R.layout.add_new_category, null);
+        AlertDialog.Builder adBuilder = new AlertDialog.Builder(this);
+
+        etNewCategory = (MaterialEditText) add_category_layout.findViewById(R.id.etNewMenu);
+        bSelect = (Button) add_category_layout.findViewById(R.id.bSelect);
+        bUpload = (Button) add_category_layout.findViewById(R.id.bUpload);
+
+        etNewCategory.setText(categoryItem.getName());
+
+        bSelect.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                //Let the user pick an image from the gallery, then save the image's Uri
+                selectAnImage();
+            }
+        });
+
+        bUpload.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                changeImage(categoryItem, key);
+            }
+        });
+
+        adBuilder.setTitle("Update category")
+                .setMessage("Enter a name, then select a picture to represent your new category.")
+                .setView(add_category_layout);
+
+        alertDialog = adBuilder.create();
+        alertDialog.show();
+    }
+
+    private void changeImage(final Category categoryItem, final String key) {
+
+        //Input check
+        if(etNewCategory.getText().toString().matches("")){
+            Toast.makeText(this, "Please enter a category name", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        if(savedUri != null){
+            final ProgressDialog mDialog = new ProgressDialog(this);
+            mDialog.setMessage("Uploading");
+            mDialog.show();
+
+            final String imageName = UUID.randomUUID().toString();
+            StorageReference imageReference = storageReference.child("images/" + imageName);
+
+            imageReference.putFile(savedUri).addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
+                @Override
+                public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
+                    mDialog.dismiss();
+                    Toast.makeText(HomeActivity.this, "Upload successful !", Toast.LENGTH_SHORT).show();
+
+                    //Now we update the Category here, then push it to the db
+                    categoryItem.setLink(taskSnapshot.getDownloadUrl().toString());
+                    categoryItem.setName(etNewCategory.getText().toString());
+                    category_table.child(key).setValue(categoryItem);
+                }
+            })
+                    .addOnFailureListener(new OnFailureListener() {
+                        @Override
+                        public void onFailure(@NonNull Exception e) {
+                            mDialog.dismiss();
+                            Toast.makeText(HomeActivity.this, e.getMessage(), Toast.LENGTH_SHORT).show();
+                        }
+                    });
+        }
+        else {
+            //We just change it's name, and we update it in the dataBase
+            categoryItem.setName(etNewCategory.getText().toString());
+            category_table.child(key).setValue(categoryItem);
+        }
+
+        alertDialog.dismiss();
+        Snackbar.make(findViewById(R.id.drawer_layout), "Category updated", Snackbar.LENGTH_SHORT).show();
+
+        //Clear savedUri
+        savedUri = null;
+
     }
 
     @Override
