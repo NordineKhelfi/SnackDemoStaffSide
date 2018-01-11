@@ -115,7 +115,10 @@ public class HomeActivity extends AppCompatActivity
                 viewHolder.setItemClickListener(new ItemClickListener() {
                     @Override
                     public void onClick(View view, int position, boolean isLongClick) {
-                        //TODO
+
+                        Intent intent = new Intent(HomeActivity.this, FoodListActivity.class);
+                        intent.putExtra("CategoryId", recyclerAdapter.getRef(position).getKey());
+                        startActivity(intent);
 
                     }
                 });
@@ -172,6 +175,17 @@ public class HomeActivity extends AppCompatActivity
 
     }
 
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        if(requestCode == PICK_IMAGE_REQUEST_CODE && resultCode == RESULT_OK
+                && data != null && data.getData() != null){
+            savedUri = data.getData();
+            bSelect.setText("Selected !");
+        }
+    }
+
     private void uploadImage() {
 
         //Input check
@@ -196,7 +210,7 @@ public class HomeActivity extends AppCompatActivity
             @Override
             public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
                 mDialog.dismiss();
-                Toast.makeText(HomeActivity.this, "Upload successfull !", Toast.LENGTH_SHORT).show();
+                Toast.makeText(HomeActivity.this, "Upload successful !", Toast.LENGTH_SHORT).show();
                 alertDialog.dismiss();
 
                 //Now we instantiate the new Category
@@ -207,19 +221,19 @@ public class HomeActivity extends AppCompatActivity
                 Snackbar.make(findViewById(R.id.drawer_layout), "New category added", Snackbar.LENGTH_SHORT).show();
             }
         })
-        .addOnFailureListener(new OnFailureListener() {
-            @Override
-            public void onFailure(@NonNull Exception e) {
-                mDialog.dismiss();
-                Toast.makeText(HomeActivity.this, e.getMessage(), Toast.LENGTH_SHORT).show();
-            }
-        })
-        .addOnProgressListener(new OnProgressListener<UploadTask.TaskSnapshot>() {
-            @Override
-            public void onProgress(UploadTask.TaskSnapshot taskSnapshot) {
+                .addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        mDialog.dismiss();
+                        Toast.makeText(HomeActivity.this, e.getMessage(), Toast.LENGTH_SHORT).show();
+                    }
+                })
+                .addOnProgressListener(new OnProgressListener<UploadTask.TaskSnapshot>() {
+                    @Override
+                    public void onProgress(UploadTask.TaskSnapshot taskSnapshot) {
 
-            }
-        });
+                    }
+                });
 
         //Clear savedUri
         savedUri = null;
@@ -317,22 +331,11 @@ public class HomeActivity extends AppCompatActivity
         }
 
         alertDialog.dismiss();
-        Snackbar.make(findViewById(R.id.drawer_layout), "Category updated", Snackbar.LENGTH_SHORT).show();
+        Snackbar.make(findViewById(R.id.rlFoodList), "Food updated", Snackbar.LENGTH_SHORT).show();
 
         //Clear savedUri
         savedUri = null;
 
-    }
-
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-
-        if(requestCode == PICK_IMAGE_REQUEST_CODE && resultCode == RESULT_OK
-                && data != null && data.getData() != null){
-            savedUri = data.getData();
-            bSelect.setText("Selected !");
-        }
     }
 
     @Override
