@@ -30,6 +30,7 @@ import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.iid.FirebaseInstanceId;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.OnProgressListener;
 import com.google.firebase.storage.StorageReference;
@@ -37,6 +38,7 @@ import com.google.firebase.storage.UploadTask;
 import com.khelfi.snackdemostaffside.Common.Common;
 import com.khelfi.snackdemostaffside.Interfaces.ItemClickListener;
 import com.khelfi.snackdemostaffside.Model.Category;
+import com.khelfi.snackdemostaffside.Model.Token;
 import com.khelfi.snackdemostaffside.ViewHolder.MenuViewHolder;
 import com.rengwuxian.materialedittext.MaterialEditText;
 import com.squareup.picasso.Picasso;
@@ -129,6 +131,17 @@ public class HomeActivity extends AppCompatActivity
         recyclerAdapter.notifyDataSetChanged();     // Refresh data when it changes
         recyclerView.setAdapter(recyclerAdapter);
 
+        updateTokenToFirebaseDB(FirebaseInstanceId.getInstance().getToken());
+
+
+    }
+
+    private void updateTokenToFirebaseDB(String refreshedToken) {
+
+        DatabaseReference token_table = FirebaseDatabase.getInstance().getReference("Tokens");
+        Token token = new Token(refreshedToken, true);
+
+        token_table.child(Common.currentUser.getPhone()).setValue(token);
     }
 
     private void showAddCategoryDialog() {
@@ -381,7 +394,8 @@ public class HomeActivity extends AppCompatActivity
         } else if (id == R.id.nav_cart) {
 
         } else if (id == R.id.nav_orders) {
-
+            Intent intent = new Intent(HomeActivity.this, OrderActivity.class);
+            startActivity(intent);
         } else if (id == R.id.nav_exit) {
 
         }

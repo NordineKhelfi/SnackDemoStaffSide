@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.v7.widget.CardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="8dp"
+    app:cardElevation="8dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginTop="16dp"
+        android:layout_marginBottom="16dp"
+        android:layout_gravity="center_vertical">
+
+        <LinearLayout
+            android:layout_weight="9"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:id="@+id/tvOrderId"
+                android:layout_marginLeft="10dp"
+                android:gravity="center_vertical|left"
+                android:textAllCaps="true"
+                android:text="#02655056"
+                android:textStyle="bold"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:id="@+id/tvOrderStatus"
+                android:layout_marginLeft="10dp"
+                android:gravity="center_vertical|left"
+                android:textAllCaps="true"
+                android:text="STATUS"
+                android:textStyle="italic"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:id="@+id/tvOrderPhone"
+                android:layout_marginLeft="10dp"
+                android:gravity="center_vertical|left"
+                android:textAllCaps="true"
+                android:text="555-213-321"
+                android:textStyle="italic"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:id="@+id/tvOrderAddress"
+                android:layout_marginLeft="10dp"
+                android:gravity="center_vertical|left"
+                android:textAllCaps="true"
+                android:text="5 chari3 saïd Adballah"
+                android:textStyle="italic"/>
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+</android.support.v7.widget.CardView>
